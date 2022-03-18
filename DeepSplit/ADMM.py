@@ -735,81 +735,81 @@ class ADMM_Session():
         for block in self.ADMM_blocks:
             block.adjust_dual_variables_with_rho(multiplier)
 
-
-    def adjust_rho_with_spectral_penalty_parameters(self, var_set_new, var_set_old):
-        old_rho = self.rho
-
-        diff_x = [var_set_new['x'][i] - var_set_old['x'][i] for i in range(len(var_set_new['x']))]
-        diff_yz = [var_set_new['yz'][i] - var_set_old['yz'][i] for i in range(len(var_set_new['yz']))]
-        diff_dual = [var_set_new['dual'][i] - var_set_old['dual'][i] for i in range(len(var_set_new['dual']))]
-        diff_dual_hat = [var_set_new['dual_hat'][i] - var_set_old['dual_hat'][i] for i in range(len(var_set_new['dual_hat']))]
-
-        # computer the required inner products
-
-        Delta_H = torch.cat((diff_x[0], diff_x[0]), 1)
-        for i in range(len(diff_x)-2):
-            Delta_H = torch.cat((Delta_H, diff_x[i+1], diff_x[i+1]), 1)
-        Delta_H = torch.cat((Delta_H, diff_x[-1]), -1)
-
-        Delta_dual_hat = diff_dual_hat[0]
-        for i in range(len(diff_dual_hat)-1):
-            Delta_dual_hat = torch.cat((Delta_dual_hat, diff_dual_hat[i+1]), 1)
-
-        Delta_G = -diff_yz[0]
-        for i in range(len(diff_yz)-1):
-            Delta_G = torch.cat((Delta_G, -diff_yz[i+1]), 1)
-
-        Delta_dual = diff_dual[0]
-        for i in range(len(diff_dual)-1):
-            Delta_dual = torch.cat((Delta_dual, diff_dual[i+1]), 1)
-
-        prod_dual_hat = torch.sum(torch.mul(Delta_dual_hat, Delta_dual_hat), 1)
-        prod_H_dual_hat = torch.sum(torch.mul(Delta_H, Delta_dual_hat), 1)
-        prod_H = torch.sum(torch.mul(Delta_H, Delta_H), 1)
-
-        prod_dual = torch.sum(torch.mul(Delta_dual, Delta_dual), 1)
-        prod_G = torch.sum(torch.mul(Delta_G, Delta_G), 1)
-        prod_G_dual = torch.sum(torch.mul(Delta_G, Delta_dual), 1)
-
-        # find spectral penalty parameters
-        alpha_MG = prod_H_dual_hat/prod_H
-        alpha_SD = prod_dual_hat/prod_H_dual_hat
-
-        beta_MG = prod_G_dual/prod_G
-        beta_SD = prod_dual/prod_G_dual
-
-        alpha_ind = (2*alpha_MG > alpha_SD)
-        alpha = torch.zeros(alpha_MG.size()).to(alpha_ind.device)
-        alpha[alpha_ind] = alpha_MG[alpha_ind]
-        alpha[~alpha_ind] = (alpha_SD - alpha_MG/2)[~alpha_ind]
-
-        beta_ind = (2*beta_MG > beta_SD)
-        beta = torch.zeros(beta_MG.size()).to(alpha_ind.device)
-        beta[beta_ind] = beta_MG[beta_ind]
-        beta[~beta_ind] = (beta_SD - beta_MG/2)[~beta_ind]
-
-        # correlation
-        alpha_cor = prod_H_dual_hat/torch.sqrt(prod_H)/torch.sqrt(prod_dual_hat)
-        beta_cor = prod_G_dual/torch.sqrt(prod_G)/torch.sqrt(prod_dual)
-
-        # the default correlation threshold
-        eps_cor = 0.2
-
-        ind_set_1 = (alpha_cor > eps_cor)*(beta_cor > eps_cor)
-        ind_set_2 = (alpha_cor > eps_cor)*(beta_cor <= eps_cor)
-        ind_set_3 = (alpha_cor <= eps_cor)*(beta_cor > eps_cor)
-        ind_set_4 = (alpha_cor <= eps_cor)*(beta_cor <= eps_cor)
-
-        new_rho = torch.zeros(old_rho.size()).to(self.rho.device)
-        new_rho[ind_set_1] = torch.sqrt(alpha*beta)[ind_set_1]
-        new_rho[ind_set_2] = alpha[ind_set_2]
-        new_rho[ind_set_3] = beta[ind_set_3]
-        new_rho[ind_set_4] = old_rho[ind_set_4]
-
-        assert torch.all(new_rho >0)
-
-        self.adjust_dual_variables_with_rho(new_rho)
-        self.rho = new_rho
+    # fixme: residual balancing through spectral penalty remains to be tested
+    # def adjust_rho_with_spectral_penalty_parameters(self, var_set_new, var_set_old):
+    #     old_rho = self.rho
+    #
+    #     diff_x = [var_set_new['x'][i] - var_set_old['x'][i] for i in range(len(var_set_new['x']))]
+    #     diff_yz = [var_set_new['yz'][i] - var_set_old['yz'][i] for i in range(len(var_set_new['yz']))]
+    #     diff_dual = [var_set_new['dual'][i] - var_set_old['dual'][i] for i in range(len(var_set_new['dual']))]
+    #     diff_dual_hat = [var_set_new['dual_hat'][i] - var_set_old['dual_hat'][i] for i in range(len(var_set_new['dual_hat']))]
+    #
+    #     # computer the required inner products
+    #
+    #     Delta_H = torch.cat((diff_x[0], diff_x[0]), 1)
+    #     for i in range(len(diff_x)-2):
+    #         Delta_H = torch.cat((Delta_H, diff_x[i+1], diff_x[i+1]), 1)
+    #     Delta_H = torch.cat((Delta_H, diff_x[-1]), -1)
+    #
+    #     Delta_dual_hat = diff_dual_hat[0]
+    #     for i in range(len(diff_dual_hat)-1):
+    #         Delta_dual_hat = torch.cat((Delta_dual_hat, diff_dual_hat[i+1]), 1)
+    #
+    #     Delta_G = -diff_yz[0]
+    #     for i in range(len(diff_yz)-1):
+    #         Delta_G = torch.cat((Delta_G, -diff_yz[i+1]), 1)
+    #
+    #     Delta_dual = diff_dual[0]
+    #     for i in range(len(diff_dual)-1):
+    #         Delta_dual = torch.cat((Delta_dual, diff_dual[i+1]), 1)
+    #
+    #     prod_dual_hat = torch.sum(torch.mul(Delta_dual_hat, Delta_dual_hat), 1)
+    #     prod_H_dual_hat = torch.sum(torch.mul(Delta_H, Delta_dual_hat), 1)
+    #     prod_H = torch.sum(torch.mul(Delta_H, Delta_H), 1)
+    #
+    #     prod_dual = torch.sum(torch.mul(Delta_dual, Delta_dual), 1)
+    #     prod_G = torch.sum(torch.mul(Delta_G, Delta_G), 1)
+    #     prod_G_dual = torch.sum(torch.mul(Delta_G, Delta_dual), 1)
+    #
+    #     # find spectral penalty parameters
+    #     alpha_MG = prod_H_dual_hat/prod_H
+    #     alpha_SD = prod_dual_hat/prod_H_dual_hat
+    #
+    #     beta_MG = prod_G_dual/prod_G
+    #     beta_SD = prod_dual/prod_G_dual
+    #
+    #     alpha_ind = (2*alpha_MG > alpha_SD)
+    #     alpha = torch.zeros(alpha_MG.size()).to(alpha_ind.device)
+    #     alpha[alpha_ind] = alpha_MG[alpha_ind]
+    #     alpha[~alpha_ind] = (alpha_SD - alpha_MG/2)[~alpha_ind]
+    #
+    #     beta_ind = (2*beta_MG > beta_SD)
+    #     beta = torch.zeros(beta_MG.size()).to(alpha_ind.device)
+    #     beta[beta_ind] = beta_MG[beta_ind]
+    #     beta[~beta_ind] = (beta_SD - beta_MG/2)[~beta_ind]
+    #
+    #     # correlation
+    #     alpha_cor = prod_H_dual_hat/torch.sqrt(prod_H)/torch.sqrt(prod_dual_hat)
+    #     beta_cor = prod_G_dual/torch.sqrt(prod_G)/torch.sqrt(prod_dual)
+    #
+    #     # the default correlation threshold
+    #     eps_cor = 0.2
+    #
+    #     ind_set_1 = (alpha_cor > eps_cor)*(beta_cor > eps_cor)
+    #     ind_set_2 = (alpha_cor > eps_cor)*(beta_cor <= eps_cor)
+    #     ind_set_3 = (alpha_cor <= eps_cor)*(beta_cor > eps_cor)
+    #     ind_set_4 = (alpha_cor <= eps_cor)*(beta_cor <= eps_cor)
+    #
+    #     new_rho = torch.zeros(old_rho.size()).to(self.rho.device)
+    #     new_rho[ind_set_1] = torch.sqrt(alpha*beta)[ind_set_1]
+    #     new_rho[ind_set_2] = alpha[ind_set_2]
+    #     new_rho[ind_set_3] = beta[ind_set_3]
+    #     new_rho[ind_set_4] = old_rho[ind_set_4]
+    #
+    #     assert torch.all(new_rho >0)
+    #
+    #     self.adjust_dual_variables_with_rho(new_rho)
+    #     self.rho = new_rho
 
 
 
@@ -951,6 +951,16 @@ def init_sequential_admm_session(nn_layer_list, horizon, ref_x, x_lb, x_ub, c, r
 #     admm_module = ADMM_Module(admm_layer_list)
 #     output = x
 #     return admm_module, output
+
+
+# =============================================================================
+# Custom layers
+# =============================================================================
+
+class Flatten(nn.Module):
+    def forward(self, x):
+        return x.view(x.size(0), -1)
+
 
 # =============================================================================
 # projection functions to the convex overapproximation of each layer
@@ -1265,6 +1275,10 @@ def compute_bounds_interval_arithmetic(nn_layer_list, lb0, ub0):
 
         elif isinstance(layer, nn.AdaptiveAvgPool2d):
             assert layer.output_size[0] == 1
+            lbs.append(layer(lb))
+            ubs.append(layer(ub))
+
+        elif isinstance(layer, Flatten):
             lbs.append(layer(lb))
             ubs.append(layer(ub))
 
