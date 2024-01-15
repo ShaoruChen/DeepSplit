@@ -4,4 +4,3 @@
   Shaoru Chen*, Eric Wong*, J. Zico Kolter, Mahyar Fazlyab (* Equal contribution)  
   Under review of IEEE Open Journal of Control Systems
   
- Currently under construction. More examples and features to add. Stay tuned!
