@@ -1,4 +1,4 @@
-from deepsplit.admm import Flatten
+from DeepSplit.ADMM import Flatten
 import torch
 import torch.nn as nn
 import torchvision.datasets as datasets

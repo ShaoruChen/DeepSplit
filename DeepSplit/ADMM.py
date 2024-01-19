@@ -8,12 +8,7 @@ import warnings
 warnings.simplefilter("always")
 
 import time
-import cvxpy as cp
-import numpy as np
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-# torch.set_grad_enabled(False)
-
 
 # =============================================================================
 # ADMM layer

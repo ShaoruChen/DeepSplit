@@ -7,23 +7,19 @@ from torch.utils.data import Dataset, DataLoader
 import cvxpy as cp
 import numpy as np
 import copy
-
-from tqdm import tqdm
 import time
 
 from pympc.geometry.polyhedron import Polyhedron
-import nn_reachability.utilities as ut
 import warnings
 warnings.simplefilter("always")
 
-import nn_reachability.utilities as ut
+import utilities as ut
 
 
 import sys
-sys.path.append(r'D:\Shaoru\GithubDesk\auto_LiRPA')
 from auto_LiRPA import BoundedModule, BoundedTensor, PerturbationLpNorm
 from tqdm import tqdm
-from nn_reachability.ADMM import intermediate_bounds_from_ADMM, InitModule, ADMM_Session, run_ADMM
+from ADMM import intermediate_bounds_from_ADMM, InitModule, ADMM_Session, run_ADMM
 
 class SequentialModel(nn.Module):
     def __init__(self, nn_model, N):
@@ -388,8 +384,6 @@ def pre_act_bds_tensor_to_numpy(pre_act_bds):
     # fixme: currently assume the tensors are of size [1, n] in pre_act_bds
     pre_act_bds_numpy = [{'lb':item['lb'][0].numpy(), 'ub': item['ub'][0].numpy()} for item in pre_act_bds]
     return pre_act_bds_numpy
-
-
 
 def repeat_nn_model(nn_model, N):
     # repeat nn_model N times and concatenate them in one nn model

@@ -1,9 +1,15 @@
-import torch
+
+import os
 import sys
 
-sys.path.append("..")
+script_directory = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(script_directory)
 
-from deepsplit.admm import *
+project_dir = os.path.dirname(script_directory)
+project_dir = os.path.dirname(project_dir)
+sys.path.append(project_dir)
+
+from DeepSplit.ADMM import *
 from mnist_nn_models import mnist_fc, mnist_loaders
 import matplotlib.pyplot as plt
 
@@ -11,9 +17,11 @@ torch.set_grad_enabled(False)
 
 if __name__ == '__main__':
     model_param_name = 'mnist_fc.pth'
+    model_path = os.path.join(script_directory, model_param_name)
+
     nn_model = mnist_fc()
-    nn_model.load_state_dict(torch.load(model_param_name))
-    nn_model.cuda()
+    # nn_model.load_state_dict(torch.load(model_path), map_location=torch.device('cpu'))
+    # nn_model.cuda()
 
     # load test data set
     batch_size = 1
@@ -25,7 +33,8 @@ if __name__ == '__main__':
     layer_list = list(nn_model)[1:]
     data_iter = iter(data_loader)
     data = data_iter.next()
-    image, label = data[0].cuda(), data[1].cuda()
+    # image, label = data[0].cuda(), data[1].cuda()
+    image, label = data[0], data[1]
 
     x_input = nn_model[0](image)
     lb_input = x_input - eps
@@ -43,7 +52,7 @@ if __name__ == '__main__':
     c[:, class_idx] = -torch.ones(num_samples)
     for j in range(num_samples):
         c[j, class_num[j]] += 1
-    c = c.cuda()
+    # c = c.cuda()
 
     rho = 1.0
     alg_options = {'rho': rho, 'eps_abs': 1e-4, 'eps_rel': 1e-3, 'residual_balancing': True, 'max_iter': 10000,
