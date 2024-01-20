@@ -4,8 +4,8 @@
   Shaoru Chen*, Eric Wong*, J. Zico Kolter, Mahyar Fazlyab (* Equal contribution)  
   Under review of IEEE Open Journal of Control Systems
 
-## Installation 
-
+## Installation & Usage
+Run the following commands to install a conda environment:
 ```
 conda create -n deepsplit python=3.10
 conda activate deepsplit
@@ -18,4 +18,9 @@ conda install -c conda-forge cvxpy
 
 pip install convex_adversarial
 pip install -r requirements.txt
+```
+
+Run the following command to bound the output of an MLP image classifier on the MNIST dataset:
+```
+python examples/mnist/main_mnist_fc.py
 ```
